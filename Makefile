@@ -1,15 +1,14 @@
 TARGET = wm
 
-PREFIX = /usr
-
-SCRS = windowmanager.cpp
+SCRS = main.cpp windowmanager.cpp
 OBJS = ${SCRS:.cpp=.o}
 
-CXX = clang++
+PREFIX ?= /usr
+CXX ?= clang++
 PKGCONFIG = xcb xcb-aux
-CPPFLAGS = `pkg-config --cflags ${PKGCONFIG}`
-CXXFLAGS = -Wall -Werror -std=c++11 -g
-LDFLAGS  = `pkg-config --libs ${PKGCONFIG}`
+CPPFLAGS += `pkg-config --cflags ${PKGCONFIG}`
+CXXFLAGS += -Wall -Werror -std=c++11 -g
+LDFLAGS  += `pkg-config --libs ${PKGCONFIG}`
 
 all: ${TARGET}
 
