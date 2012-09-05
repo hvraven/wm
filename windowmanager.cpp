@@ -17,8 +17,7 @@ WindowManager::WindowManager()
   uint32_t values[] = { XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
                         XCB_EVENT_MASK_STRUCTURE_NOTIFY |
                         XCB_EVENT_MASK_PROPERTY_CHANGE |
-                        XCB_EVENT_MASK_ENTER_WINDOW |
-                        XCB_EVENT_MASK_KEY_PRESS };
+                        XCB_EVENT_MASK_ENTER_WINDOW };
   xcb_void_cookie_t cookie =
     xcb_change_window_attributes_checked(conn, get_root_window(),
                                          mask, values);
