@@ -1,6 +1,7 @@
 #include "windowmanager.h"
 
 #include "logging.h"
+#include <memory>
 #include <stdexcept>
 #include <unistd.h>
 #include <xcb/xcb_aux.h>
@@ -25,7 +26,7 @@ WindowManager::WindowManager()
   if (error != nullptr)
     throw std::runtime_error("Another wm seems to be running.");
 
-  test_setup_keybinding();
+  initialize_keybindings();
 
   dlog("done with initialization.");
 }
@@ -42,37 +43,6 @@ WindowManager::run()
 }
 
 void
-WindowManager::test_setup_keybinding()
-{
-  dlog("Setup Test Keygrab");
-
-  xcb_key_symbols_t* keysyms = xcb_key_symbols_alloc(conn);
-
-  xcb_keycode_t* keycode = xcb_key_symbols_get_keycode(keysyms,
-                                                       XK_Return);
-
-  /*
-   * enum MODS {
-   *   NONE = 0
-   *   XCB_MOD_MASK_SHIFT (1 << 1)
-   *   XCB_MOD_MASK_CONTROL (1 << 2)
-   *   XCB_MOD_MASK_1 (1 << 3)
-   *   ...
-   *   XCB_MOD_MASK_5 (1 << 7)
-   *   XCB_MOD_MASK_ANY (???)
-   * }
-   */
-  xcb_grab_key(conn, 0, get_root_window(), XCB_MOD_MASK_4, *keycode,
-               XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC);
-  KeySet key(XCB_MOD_MASK_4, *keycode);
-  keybindings[key] = KeyBindFunc(&WindowManager::spawn);
-
-  delete keycode;
-  xcb_key_symbols_free(keysyms);
-  xcb_flush(conn);
-}
-
-void
 WindowManager::spawn()
 {
   if (fork() == 0)
@@ -84,14 +54,16 @@ WindowManager::spawn()
     }
 }
 
+typedef std::unique_ptr<xcb_generic_event_t, decltype(&std::free)>
+    generic_event_ptr;
+
 void
 WindowManager::event_loop()
 {
   for (;;)
     {
-      xcb_generic_event_t* event = xcb_wait_for_event(conn);
-      handle_generic_event(event);
-      delete event;
+      generic_event_ptr event(xcb_wait_for_event(conn), &std::free);
+      handle_generic_event(event.get());
     }
 }
 

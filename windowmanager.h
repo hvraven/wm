@@ -26,7 +26,7 @@ private:
   std::list<Window> windows;
   Keybindings keybindings;
 
-  void test_setup_keybinding();
+  void initialize_keybindings();
 
   void spawn();
   void event_loop();
@@ -35,6 +35,10 @@ private:
   void handle_configure_request_event(xcb_configure_request_event_t*);
   void handle_map_request_event(xcb_map_request_event_t*);
 
+  keysyms_ptr get_key_symbols();
+  keycode_ptr get_key_code(xcb_key_symbols_t *, xcb_keysym_t);
+  keycode_ptr get_key_code(const keysyms_ptr& syms, xcb_keysym_t sym)
+    { return get_key_code(syms.get(), sym); }
 };
 
 #endif /* WINDOWMANAGER_H */
