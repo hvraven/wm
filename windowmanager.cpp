@@ -4,10 +4,6 @@
 #include <stdexcept>
 #include <unistd.h>
 #include <xcb/xcb_aux.h>
-#include <xcb/xcb_keysyms.h>
-
-// from X11/keysymdef.h
-const uint32_t XK_Num_Lock = 0xff7f;
 
 WindowManager::WindowManager()
 {
@@ -20,16 +16,17 @@ WindowManager::WindowManager()
   uint32_t mask = XCB_CW_EVENT_MASK;
   uint32_t values[] = { XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
                         XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-                        XCB_EVENT_MASK_POINTER_MOTION |
                         XCB_EVENT_MASK_PROPERTY_CHANGE |
                         XCB_EVENT_MASK_ENTER_WINDOW |
-                        XCB_EVENT_MASK_BUTTON_PRESS };
+                        XCB_EVENT_MASK_KEY_PRESS };
   xcb_void_cookie_t cookie =
     xcb_change_window_attributes_checked(conn, get_root_window(),
                                          mask, values);
   xcb_generic_error_t* error = xcb_request_check(conn, cookie);
   if (error != nullptr)
     throw std::runtime_error("Another wm seems to be running.");
+
+  test_setup_keybinding();
 
   dlog("done with initialization.");
 }
@@ -50,7 +47,11 @@ WindowManager::test_setup_keybinding()
 {
   dlog("Setup Test Keygrab");
 
-  uint32_t keycode = 1;
+  xcb_key_symbols_t* keysyms = xcb_key_symbols_alloc(conn);
+
+  xcb_keycode_t* keycode = xcb_key_symbols_get_keycode(keysyms,
+                                                       XK_Return);
+
   /*
    * enum MODS {
    *   NONE = 0
@@ -62,10 +63,26 @@ WindowManager::test_setup_keybinding()
    *   XCB_MOD_MASK_ANY (???)
    * }
    */
-  uint32_t mods = 0;
-
-  xcb_grab_key(conn, 0, get_root_window(), mods, keycode,
+  xcb_grab_key(conn, 0, get_root_window(), XCB_MOD_MASK_4, *keycode,
                XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC);
+  KeySet key(XCB_MOD_MASK_4, *keycode);
+  keybindings[key] = KeyBindFunc(&WindowManager::spawn);
+
+  delete keycode;
+  xcb_key_symbols_free(keysyms);
+  xcb_flush(conn);
+}
+
+void
+WindowManager::spawn()
+{
+  if (fork() == 0)
+    {
+      setsid();
+      dlog("Spawning xterm");
+      execlp("/usr/bin/xterm", "");
+      elog("Failed to spawn xterm");
+    }
 }
 
 void
@@ -85,45 +102,44 @@ WindowManager::handle_generic_event(xcb_generic_event_t* event)
   switch (event->response_type & ~0x80)
     {
     case XCB_BUTTON_PRESS:
-      dlog("Event of type \'XCB_BUTTON_PRESS\' found.");
-      handle_button_press_event
-        (reinterpret_cast<xcb_button_press_event_t*>(event));
-      break;
+    dlog("Event of type \'XCB_BUTTON_PRESS\' found.");
+    /*
+       handle_button_press_event
+       (reinterpret_cast<xcb_button_press_event_t*>(event));
+       */
+    break;
     case XCB_CONFIGURE_REQUEST:
-      dlog("Event of type \'XCB_CONFIGURE_REQUEST\' found.");
-      handle_configure_request_event
-        (reinterpret_cast<xcb_configure_request_event_t*>(event));
-      break;
+    dlog("Event of type \'XCB_CONFIGURE_REQUEST\' found.");
+    handle_configure_request_event
+      (reinterpret_cast<xcb_configure_request_event_t*>(event));
+    break;
     case XCB_MAP_REQUEST:
-      dlog("Event of type \'XCB_MAP_REQUEST\' found.");
-      handle_map_request_event
-        (reinterpret_cast<xcb_map_request_event_t*>(event));
-      break;
+    dlog("Event of type \'XCB_MAP_REQUEST\' found.");
+    handle_map_request_event
+      (reinterpret_cast<xcb_map_request_event_t*>(event));
+    break;
     case XCB_KEY_PRESS:
-      dlog("Event of type \'XCB_KEY_PRESS\' found.");
-      //handle_key_press_event(reinterpret_cast<xcb_key_press_event_t*>(event));
-      break;
+    dlog("Event of type \'XCB_KEY_PRESS\' found.");
+    handle_key_press_event(reinterpret_cast<xcb_key_press_event_t*>(event));
+    break;
     default:
-      elog("Unhandled event of type ", event->response_type & ~0x80);
-      break;
+    elog("Unhandled event of type ", event->response_type & ~0x80);
+    break;
     }
 }
 
 void
-WindowManager::handle_button_press_event(xcb_button_press_event_t*)
+WindowManager::handle_key_press_event(xcb_key_press_event_t* event)
 {
-  if (fork() == 0)
-    {
-      setsid();
-      dlog("Spawning xterm");
-      execlp("/usr/bin/xterm", "");
-      elog("Failed to spawn xterm");
-    }
+  KeySet key(event->state, event->detail);
+  KeyBindFunc fun = keybindings[key];
+  if (fun)
+    fun(*this);
 }
 
 void
 WindowManager::handle_configure_request_event
-    (xcb_configure_request_event_t* event)
+(xcb_configure_request_event_t* event)
 {
   uint32_t values[7];
   int i = -1;

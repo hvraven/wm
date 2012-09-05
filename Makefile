@@ -4,8 +4,8 @@ SCRS = main.cpp windowmanager.cpp window.cpp
 OBJS = ${SCRS:.cpp=.o}
 
 PREFIX ?= /usr
-CXX ?= clang++
-PKGCONFIG = xcb xcb-aux
+CXX = clang++
+PKGCONFIG = xcb xcb-aux xcb-keysyms
 CPPFLAGS += `pkg-config --cflags ${PKGCONFIG}`
 CXXFLAGS += -Wall -Werror -std=c++11 -g
 LDFLAGS  += `pkg-config --libs ${PKGCONFIG}`

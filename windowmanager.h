@@ -1,6 +1,7 @@
 #ifndef WINDOWMANAGER_H
 #define WINDOWMANAGER_H
 
+#include "keybind.h"
 #include "window.h"
 #include <list>
 #include <xcb/xcb.h>
@@ -23,14 +24,17 @@ private:
 
   // very simple window management
   std::list<Window> windows;
+  Keybindings keybindings;
 
   void test_setup_keybinding();
 
+  void spawn();
   void event_loop();
   void handle_generic_event(xcb_generic_event_t*);
-  void handle_button_press_event(xcb_button_press_event_t*);
+  void handle_key_press_event(xcb_key_press_event_t*);
   void handle_configure_request_event(xcb_configure_request_event_t*);
   void handle_map_request_event(xcb_map_request_event_t*);
+
 };
 
 #endif /* WINDOWMANAGER_H */
