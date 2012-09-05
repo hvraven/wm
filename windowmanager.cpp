@@ -1,7 +1,8 @@
 #include "windowmanager.h"
 
-#include "debug.h"
+#include "logging.h"
 #include <stdexcept>
+#include <unistd.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_keysyms.h>
 
@@ -21,7 +22,8 @@ WindowManager::WindowManager()
                         XCB_EVENT_MASK_STRUCTURE_NOTIFY |
                         XCB_EVENT_MASK_POINTER_MOTION |
                         XCB_EVENT_MASK_PROPERTY_CHANGE |
-                        XCB_EVENT_MASK_ENTER_WINDOW };
+                        XCB_EVENT_MASK_ENTER_WINDOW |
+                        XCB_EVENT_MASK_BUTTON_PRESS };
   xcb_void_cookie_t cookie =
     xcb_change_window_attributes_checked(conn, get_root_window(),
                                          mask, values);
@@ -72,17 +74,85 @@ WindowManager::event_loop()
   for (;;)
     {
       xcb_generic_event_t* event = xcb_wait_for_event(conn);
-      handle_event(event);
-      free(event);
+      handle_generic_event(event);
+      delete event;
     }
 }
 
 void
-WindowManager::handle_event(xcb_generic_event_t* event)
+WindowManager::handle_generic_event(xcb_generic_event_t* event)
 {
   switch (event->response_type & ~0x80)
     {
+    case XCB_BUTTON_PRESS:
+      dlog("Event of type \'XCB_BUTTON_PRESS\' found.");
+      handle_button_press_event
+        (reinterpret_cast<xcb_button_press_event_t*>(event));
+      break;
+    case XCB_CONFIGURE_REQUEST:
+      dlog("Event of type \'XCB_CONFIGURE_REQUEST\' found.");
+      handle_configure_request_event
+        (reinterpret_cast<xcb_configure_request_event_t*>(event));
+      break;
+    case XCB_MAP_REQUEST:
+      dlog("Event of type \'XCB_MAP_REQUEST\' found.");
+      handle_map_request_event
+        (reinterpret_cast<xcb_map_request_event_t*>(event));
+      break;
+    case XCB_KEY_PRESS:
+      dlog("Event of type \'XCB_KEY_PRESS\' found.");
+      //handle_key_press_event(reinterpret_cast<xcb_key_press_event_t*>(event));
+      break;
     default:
-      dlog("Unhandled event of type ", event->response_type & ~0x80);
+      elog("Unhandled event of type ", event->response_type & ~0x80);
+      break;
     }
+}
+
+void
+WindowManager::handle_button_press_event(xcb_button_press_event_t*)
+{
+  if (fork() == 0)
+    {
+      setsid();
+      dlog("Spawning xterm");
+      execlp("/usr/bin/xterm", "");
+      elog("Failed to spawn xterm");
+    }
+}
+
+void
+WindowManager::handle_configure_request_event
+    (xcb_configure_request_event_t* event)
+{
+  uint32_t values[7];
+  int i = -1;
+
+  if (event->value_mask & XCB_CONFIG_WINDOW_X)
+    values[++i] = event->x;
+  if (event->value_mask & XCB_CONFIG_WINDOW_Y)
+    values[++i] = event->y;
+  if (event->value_mask & XCB_CONFIG_WINDOW_WIDTH)
+    values[++i] = event->width;
+  if (event->value_mask & XCB_CONFIG_WINDOW_HEIGHT)
+    values[++i] = event->height;
+  if (event->value_mask & XCB_CONFIG_WINDOW_SIBLING)
+    values[++i] = event->sibling;
+  if (event->value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
+    values[++i] = event->stack_mode;
+
+  if (i >= 0)
+    {
+      xcb_configure_window(conn, event->window, event->value_mask, values);
+      xcb_flush(conn);
+    }
+}
+
+void
+WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
+{
+  Window win(event->window);
+  windows.push_back(win);
+  xcb_map_window(conn, win.get_id());
+  xcb_flush(conn);
 }
