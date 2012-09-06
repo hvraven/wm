@@ -27,11 +27,15 @@ private:
   std::list<Window> windows;
   Keybindings keybindings;
 
+  xcb_window_t focus;
+
   void initialize_keybindings();
   void initialize_mousebindings();
 
   void spawn();
   void event_loop();
+  void handle_button_press_event(xcb_button_press_event_t*);
+  void handle_button_release_event(xcb_button_release_event_t*);
   void handle_configure_request_event(xcb_configure_request_event_t*);
   void handle_generic_event(xcb_generic_event_t*);
   void handle_key_press_event(xcb_key_press_event_t*);

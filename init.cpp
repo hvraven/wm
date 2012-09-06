@@ -32,8 +32,7 @@ WindowManager::initialize_mousebindings()
     xcb_grab_button(conn,
                     0,     // shall the event get to the lower windows
                     get_root_window(),    // grab in this area
-                    XCB_EVENT_MASK_BUTTON_PRESS | // events to grab
-                    XCB_EVENT_MASK_BUTTON_RELEASE,
+                    XCB_EVENT_MASK_BUTTON_PRESS,  // events to grab
                     XCB_GRAB_MODE_ASYNC,  // pointer mode
                     XCB_GRAB_MODE_ASYNC,  // keyboard mode
                     get_root_window(),    // border for mouse

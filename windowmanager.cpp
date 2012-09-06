@@ -74,13 +74,13 @@ WindowManager::handle_generic_event(xcb_generic_event_t* event)
     {
     case XCB_BUTTON_PRESS:
       dlog("Event of type \'XCB_BUTTON_PRESS\' found.");
-      /*
-       handle_button_press_event
-       (reinterpret_cast<xcb_button_press_event_t*>(event));
-       */
+      handle_button_press_event
+        (reinterpret_cast<xcb_button_press_event_t*>(event));
       break;
     case XCB_BUTTON_RELEASE:
       dlog("Event of type \'XCB_BUTTON_RELEASE\' found.");
+      handle_button_release_event
+        (reinterpret_cast<xcb_button_release_event_t*>(event));
       break;
     case XCB_CONFIGURE_REQUEST:
       dlog("Event of type \'XCB_CONFIGURE_REQUEST\' found.");
@@ -111,17 +111,43 @@ WindowManager::handle_generic_event(xcb_generic_event_t* event)
 }
 
 void
-WindowManager::handle_key_press_event(xcb_key_press_event_t* event)
+WindowManager::handle_button_press_event
+    (xcb_button_press_event_t* event)
 {
-  KeySet key(event->state, event->detail);
-  KeyBindFunc fun = keybindings[key];
-  if (fun)
-    fun(*this);
+  // check if click happend in root window
+  if (event->child == 0)
+    return;
+
+  focus = event->child;
+
+  dlog("grabing pointer in window ", focus);
+  xcb_grab_pointer(conn, 0, get_root_window(),
+                   XCB_EVENT_MASK_BUTTON_RELEASE |
+                   XCB_EVENT_MASK_BUTTON_MOTION,
+                   XCB_GRAB_MODE_ASYNC,
+                   XCB_GRAB_MODE_ASYNC,
+                   get_root_window(),
+                   XCB_NONE,
+                   XCB_CURRENT_TIME);
+
+  xcb_flush(conn);
+}
+
+/**
+ * this function should only be called if we are done moving a window
+ */
+void
+WindowManager::handle_button_release_event
+    (xcb_button_release_event_t* event)
+{
+  dlog("Releasing pointer.");
+  xcb_ungrab_pointer(conn, XCB_CURRENT_TIME);
+  xcb_flush(conn);
 }
 
 void
 WindowManager::handle_configure_request_event
-(xcb_configure_request_event_t* event)
+    (xcb_configure_request_event_t* event)
 {
   uint32_t values[7];
   int i = -1;
@@ -147,6 +173,15 @@ WindowManager::handle_configure_request_event
 }
 
 void
+WindowManager::handle_key_press_event(xcb_key_press_event_t* event)
+{
+  KeySet key(event->state, event->detail);
+  KeyBindFunc fun = keybindings[key];
+  if (fun)
+    fun(*this);
+}
+
+void
 WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
 {
   Window win(event->window);
@@ -162,6 +197,9 @@ WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
 void
 WindowManager::handle_motion_notify_event(xcb_motion_notify_event_t*)
 {
+  if (focus == 0)
+    return;
+
   free_ptr<xcb_query_pointer_reply_t> pointer
     (xcb_query_pointer_reply(conn, xcb_query_pointer
                                       (conn, get_root_window()), 0),
@@ -172,4 +210,13 @@ WindowManager::handle_motion_notify_event(xcb_motion_notify_event_t*)
       elog("Failed to get pointer position");
       return;
     }
+
+  // move window to new mouse position
+  uint32_t values[2];
+  values[0] = pointer->root_x;
+  values[1] = pointer->root_y;
+  xcb_configure_window(conn, focus,
+                       XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
+                       values);
+  xcb_flush(conn);
 }
