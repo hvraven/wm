@@ -26,6 +26,7 @@ WindowManager::WindowManager()
     throw std::runtime_error("Another wm seems to be running.");
 
   initialize_keybindings();
+  initialize_mousebindings();
 
   dlog("done with initialization.");
 }
@@ -72,29 +73,40 @@ WindowManager::handle_generic_event(xcb_generic_event_t* event)
   switch (event->response_type & ~0x80)
     {
     case XCB_BUTTON_PRESS:
-    dlog("Event of type \'XCB_BUTTON_PRESS\' found.");
-    /*
+      dlog("Event of type \'XCB_BUTTON_PRESS\' found.");
+      /*
        handle_button_press_event
        (reinterpret_cast<xcb_button_press_event_t*>(event));
        */
-    break;
+      break;
+    case XCB_BUTTON_RELEASE:
+      dlog("Event of type \'XCB_BUTTON_RELEASE\' found.");
+      break;
     case XCB_CONFIGURE_REQUEST:
-    dlog("Event of type \'XCB_CONFIGURE_REQUEST\' found.");
-    handle_configure_request_event
-      (reinterpret_cast<xcb_configure_request_event_t*>(event));
-    break;
-    case XCB_MAP_REQUEST:
-    dlog("Event of type \'XCB_MAP_REQUEST\' found.");
-    handle_map_request_event
-      (reinterpret_cast<xcb_map_request_event_t*>(event));
-    break;
+      dlog("Event of type \'XCB_CONFIGURE_REQUEST\' found.");
+      handle_configure_request_event
+        (reinterpret_cast<xcb_configure_request_event_t*>(event));
+      break;
     case XCB_KEY_PRESS:
-    dlog("Event of type \'XCB_KEY_PRESS\' found.");
-    handle_key_press_event(reinterpret_cast<xcb_key_press_event_t*>(event));
-    break;
+      dlog("Event of type \'XCB_KEY_PRESS\' found.");
+      handle_key_press_event(reinterpret_cast<xcb_key_press_event_t*>(event));
+      break;
+    case XCB_KEY_RELEASE:
+      dlog("Event of type \'XCB_KEY_RELEASE\' found.");
+      break;
+    case XCB_MAP_REQUEST:
+      dlog("Event of type \'XCB_MAP_REQUEST\' found.");
+      handle_map_request_event
+        (reinterpret_cast<xcb_map_request_event_t*>(event));
+      break;
+    case XCB_MOTION_NOTIFY:
+      dlog("Event of type \'XCB_MOTION_NOTIFY\' found.");
+      handle_motion_notify_event
+        (reinterpret_cast<xcb_motion_notify_event_t*>(event));
+      break;
     default:
-    elog("Unhandled event of type ", event->response_type & ~0x80);
-    break;
+      elog("Unhandled event of type ", event->response_type & ~0x80);
+      break;
     }
 }
 
@@ -141,4 +153,23 @@ WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
   windows.push_back(win);
   xcb_map_window(conn, win.get_id());
   xcb_flush(conn);
+}
+
+/**
+ * Handle the motion notify. As the name says it's just a notify.
+ * It's necessary to request the pointer information 
+ */
+void
+WindowManager::handle_motion_notify_event(xcb_motion_notify_event_t*)
+{
+  free_ptr<xcb_query_pointer_reply_t> pointer
+    (xcb_query_pointer_reply(conn, xcb_query_pointer
+                                      (conn, get_root_window()), 0),
+     &std::free);
+
+  if (pointer == nullptr)
+    {
+      elog("Failed to get pointer position");
+      return;
+    }
 }

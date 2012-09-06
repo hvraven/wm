@@ -1,9 +1,7 @@
 #ifndef KEYBIND_H
 #define KEYBIND_H
 
-#include <cstdlib>
 #include <map>
-#include <memory>
 #include <functional>
 #include <utility>
 #include <xcb/xcb_keysyms.h>
