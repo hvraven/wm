@@ -17,9 +17,4 @@ typedef std::function<void(WindowManager&)> KeyBindFunc;
 
 typedef std::map<KeySet, KeyBindFunc> Keybindings;
 
-typedef std::unique_ptr<xcb_key_symbols_t,
-                        std::function<void(xcb_key_symbols_t*)>>
-    keysyms_ptr;
-typedef std::unique_ptr<xcb_keycode_t, decltype(&std::free)> keycode_ptr;
-
 #endif /* KEYBIND_H */

@@ -2,6 +2,7 @@
 #define WINDOWMANAGER_H
 
 #include "keybind.h"
+#include "ptr.h"
 #include "window.h"
 #include <list>
 #include <xcb/xcb.h>

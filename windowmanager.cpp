@@ -1,7 +1,6 @@
 #include "windowmanager.h"
 
 #include "logging.h"
-#include <memory>
 #include <stdexcept>
 #include <unistd.h>
 #include <xcb/xcb_aux.h>
