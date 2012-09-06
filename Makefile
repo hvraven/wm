@@ -7,7 +7,7 @@ PREFIX ?= /usr
 CXX = clang++
 PKGCONFIG = xcb xcb-aux xcb-keysyms
 CPPFLAGS += `pkg-config --cflags ${PKGCONFIG}`
-CXXFLAGS += -Wall -Werror -std=c++11 -g
+CXXFLAGS += -Wall -Wextra -std=c++11 -g
 LDFLAGS  += `pkg-config --libs ${PKGCONFIG}`
 
 all: ${TARGET}
