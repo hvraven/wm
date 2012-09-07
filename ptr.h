@@ -7,10 +7,12 @@
 template <class T>
 using free_ptr = std::unique_ptr<T, decltype(&std::free)>;
 
-using keysyms_ptr = std::unique_ptr<xcb_key_symbols_t,
-                                    std::function
-                                        <void(xcb_key_symbols_t*)>>;
-
-using keycode_ptr = free_ptr<xcb_keycode_t>;
+template<class T, class...Args>
+std::unique_ptr<T>
+make_unique(Args&&... args)
+{
+  std::unique_ptr<T> ptr(new T(std::forward<Args>(args)...));
+  return ptr;
+}
 
 #endif /* PTR_H */

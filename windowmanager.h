@@ -1,10 +1,10 @@
 #ifndef WINDOWMANAGER_H
 #define WINDOWMANAGER_H
 
+#include "atom.h"
 #include "keybind.h"
 #include "ptr.h"
 #include "window.h"
-#include <list>
 #include <xcb/xcb.h>
 
 class WindowManager
@@ -24,19 +24,26 @@ private:
   xcb_screen_t* root_screen;
 
   // very simple window management
-  std::list<Window> windows;
+  WindowStorage windows;
   Keybindings keybindings;
+  Atoms atoms;
 
-  xcb_window_t focus;
+  Window* focus;
 
   void initialize_keybindings();
   void initialize_mousebindings();
 
-  void spawn();
+  void spawn(const char*);
+  void close_focus_window();
+  void close_window(xcb_window_t);
+  void set_focus(xcb_window_t id) { set_focus(windows[id]); }
+  void set_focus(Window* win);
+
   void event_loop();
   void handle_button_press_event(xcb_button_press_event_t*);
   void handle_button_release_event(xcb_button_release_event_t*);
   void handle_configure_request_event(xcb_configure_request_event_t*);
+  void handle_enter_notify_event(xcb_enter_notify_event_t*);
   void handle_generic_event(xcb_generic_event_t*);
   void handle_key_press_event(xcb_key_press_event_t*);
   void handle_map_request_event(xcb_map_request_event_t*);
