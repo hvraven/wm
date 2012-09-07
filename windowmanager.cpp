@@ -307,15 +307,14 @@ WindowManager::close_window(xcb_window_t id)
 
   if (be_friendly)
     {
-      xcb_client_message_event_t event = {
-          .response_type = XCB_CLIENT_MESSAGE,
-          .format = 32,
-          .sequence = 0,
-          .window = id,
-          .type = atoms.wm_protocols,
-          .data.data32 = { atoms.wm_delete_window,
-              XCB_CURRENT_TIME }
-      };
+      xcb_client_message_event_t event;
+      event.response_type = XCB_CLIENT_MESSAGE;
+      event.format = 32;
+      event.sequence = 0;
+      event.window = id;
+      event.type = atoms.wm_protocols;
+      event.data.data32[0] = atoms.wm_delete_window;
+      event.data.data32[1] = XCB_CURRENT_TIME;
       xcb_send_event(conn, false, id, XCB_EVENT_MASK_NO_EVENT,
                      reinterpret_cast<char*>(&event));
     }
