@@ -59,7 +59,7 @@ WindowManager::spawn(const char* program)
       setsid();
       dlog("Spawning ", program);
       execlp(program, "");
-      elog("Failed to spawn xterm");
+      elog("Failed to spawn ", program);
     }
 }
 
