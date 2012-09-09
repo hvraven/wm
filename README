@@ -1,0 +1,15 @@
+This is a test for a windowmanager I started. I use it to learn the 
+functionality of the xcb library and to play with some of the C++11 
+features. I tries to keep a clean codebase, but since I haven't any 
+experience with xcb (and X in general) yet, it may be a bit messy 
+sometimes.
+
+The idea is to develop a manual tiling wm with support for window 
+tabbing (and maybe stacking). Navigation should work with both hand on 
+keyboard as well with one hand on the keyboard one on the mouse, at v
+least for the basic features (moving and resizing windows, etc.)
+
+I would like to implement compositing, but that's something for later.
+
+Inspirations for that wm come from i3 and herbstluftwm. I use mcwm and 
+i3 as references for the (poorly documented) xcb library.
