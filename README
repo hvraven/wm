@@ -15,3 +15,10 @@ I would like to implement compositing, but that's something for later.
 
 Inspirations for that wm come from i3 and herbstluftwm. I use mcwm and 
 i3 as references for the (poorly documented) xcb library.
+
+== Compilation ==
+Because I use a lot of c++11 features a compiler with good c++11 
+support is required. I use clang 3.1 for development, but try to keep 
+the program compiling with gcc 4.7.
+The required dependencies are the libxcb, xcb-util, xcb-util-keysyms 
+and xcb-util-wm (and of course theire dependencies as well).
