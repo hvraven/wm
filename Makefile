@@ -14,7 +14,10 @@ LDFLAGS  += `pkg-config --libs ${PKGCONFIG}`
 all: ${TARGET}
 
 clean:
-	rm -rf ${OBJS} ${TARGET}
+	rm -f ${OBJS} ${TARGET}
+
+distclean: clean
+	rm -f core vgcore.*
 
 ${TARGET}: ${OBJS}
 	${CXX} ${OBJS} ${LDFLAGS} -o ${TARGET}
@@ -28,4 +31,4 @@ init: all
 vinit: all
 	xinit /usr/bin/valgrind --leak-check=full ./wm -- :5
 
-.PHONY: clean init vinit
+.PHONY: clean distclean init vinit
