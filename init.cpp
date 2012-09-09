@@ -42,9 +42,10 @@ WindowManager::initialize_keybindings()
 void
 WindowManager::initialize_mousebindings()
 {
+  // grab mouse buttons with modifier
   for (auto button : { XCB_BUTTON_INDEX_1,    // left
-       XCB_BUTTON_INDEX_2,    // right
-       XCB_BUTTON_INDEX_3 } ) // middle
+                       XCB_BUTTON_INDEX_2,    // right
+                       XCB_BUTTON_INDEX_3 } ) // middle
     xcb_grab_button(conn,
                     0,     // shall the event get to the lower windows
                     get_root_window(),    // grab in this area
