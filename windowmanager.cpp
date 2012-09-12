@@ -94,6 +94,9 @@ WindowManager::handle_generic_event(xcb_generic_event_t* event)
       handle_button_release_event
         (reinterpret_cast<xcb_button_release_event_t*>(event));
       break;
+    case XCB_CONFIGURE_NOTIFY:
+      dlog("Event of type \'XCB_CONFIGURE_NOTIFY\' found.");
+      break;
     case XCB_CONFIGURE_REQUEST:
       dlog("Event of type \'XCB_CONFIGURE_REQUEST\' found.");
       handle_configure_request_event
