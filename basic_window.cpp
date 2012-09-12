@@ -30,6 +30,8 @@ WindowStorage::new_xwindow(xcb_window_t id)
 {
   XWindow win(id);
   auto unique_win = make_unique<XWindow>(win);
+  // we need to get the pointer here because of the move
+  XWindow* result = unique_win.get();
   insert(make_pair(id, std::move(unique_win)));
-  return unique_win.get();
+  return result;
 }

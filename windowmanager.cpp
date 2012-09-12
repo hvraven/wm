@@ -232,6 +232,8 @@ WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
 {
   XWindow* win = windows.new_xwindow(event->window);
 
+  dlog("Initialized new XWindow with id=", win->get_id());
+
   xcb_map_window(conn, win->get_id());
   win->get_focus();
   xcb_flush(conn);
