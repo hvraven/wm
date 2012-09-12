@@ -1,23 +1,26 @@
 #include "windowmanager.h"
 
 #include "logging.h"
+#include "ptr.h"
+#include "xwindow.h"
 #include <stdexcept>
 #include <unistd.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_icccm.h>
 
 WindowManager::WindowManager()
-  : conn(nullptr),
+  : BasicWindow(0),
+    conn(nullptr),
     root_screen(nullptr),
     windows(),
-    keybindings(),
     atoms(),
-    focus(nullptr)
+    keybindings()
 {
   int screen_num;
   conn = xcb_connect(nullptr, &screen_num);
 
   root_screen = xcb_aux_get_screen(conn, screen_num);
+  id = get_root_window();
 
   atoms = Atoms(conn);
 
@@ -190,9 +193,9 @@ void
 WindowManager::handle_enter_notify_event(xcb_enter_notify_event_t* event)
 {
   // we just care for normal events. In other case pointer is grabbed,
-  // or something else we don't care happens
-  //if (event->mode != XCB_NOTIFY_MODE_NORMAL)
-  //  return;
+  // or something else we don't care what happens
+  if (event->mode != XCB_NOTIFY_MODE_NORMAL)
+    return;
 
   // check if we're entering the same window
   if (focus != nullptr && focus->get_id() == event->event)
@@ -208,8 +211,8 @@ WindowManager::handle_enter_notify_event(xcb_enter_notify_event_t* event)
       return;
     }
 
-  // set the focus and tell the X server about it
-  set_focus(event->event);
+  // tells the matching window it will get the focus
+  windows[event->event]->get_focus();
 }
 
 void
@@ -224,17 +227,10 @@ WindowManager::handle_key_press_event(xcb_key_press_event_t* event)
 void
 WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
 {
-  Window win(conn, event->window);
-  windows.insert(win);
+  XWindow* win = windows.new_xwindow(event->window);
 
-  uint32_t mask = XCB_CW_EVENT_MASK;
-  uint32_t values[] = { XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
-                        XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-                        XCB_EVENT_MASK_PROPERTY_CHANGE |
-                        XCB_EVENT_MASK_ENTER_WINDOW };
-  xcb_change_window_attributes(conn, win.get_id(), mask, values);
-  xcb_map_window(conn, win.get_id());
-  set_focus(win.get_id());
+  xcb_map_window(conn, win->get_id());
+  win->get_focus();
   xcb_flush(conn);
 }
 
@@ -281,65 +277,22 @@ WindowManager::close_focus_window()
       return;
     }
   close_window(focus->get_id());
-}
-
-/**
- * closes the given window. If the window supports it ICCCM is used
- */
-void
-WindowManager::close_window(xcb_window_t id)
-{
-  // first try the nice way using WM_DELETE if the window supports it
-  bool be_friendly = false;
-  xcb_get_property_cookie_t cookie =
-    xcb_icccm_get_wm_protocols_unchecked(conn, id, atoms.wm_protocols);
-  xcb_icccm_get_wm_protocols_reply_t protocols;
-
-  if (xcb_icccm_get_wm_protocols_reply(conn, cookie, &protocols, NULL) == 1)
-    for (uint32_t i = 0; i < protocols.atoms_len; ++i)
-      if (protocols.atoms[i] == atoms.wm_delete_window)
-        {
-          be_friendly = true;
-          break;
-        }
-
-  xcb_icccm_get_wm_protocols_reply_wipe(&protocols);
-
-  if (be_friendly)
-    {
-      xcb_client_message_event_t event;
-      event.response_type = XCB_CLIENT_MESSAGE;
-      event.format = 32;
-      event.sequence = 0;
-      event.window = id;
-      event.type = atoms.wm_protocols;
-      event.data.data32[0] = atoms.wm_delete_window;
-      event.data.data32[1] = XCB_CURRENT_TIME;
-      xcb_send_event(conn, false, id, XCB_EVENT_MASK_NO_EVENT,
-                     reinterpret_cast<char*>(&event));
-    }
-  // the window doesn't understand ICCCM. Use the hard way
-  else
-    xcb_kill_client(conn, id);
-
-  xcb_flush(conn);
 
   // we just killed our focused window
   focus = nullptr;
 }
 
 /**
- * sets the focus to a new window. if focus was set the old window
- * get's informed about the move
+ * @brief closes a window
  */
 void
-WindowManager::set_focus(Window* win)
+WindowManager::close_window(xcb_window_t id)
 {
-  dlog("Giving window focus to window ", win->get_id());
-  // if another window had the focus notify it about the loss
-  if (focus != nullptr)
-    focus->remove_focus();
+  auto& window = windows[id];
 
-  win->set_focus();
-  focus = win;
+  // the window may have to clean up some things
+  window->close();
+
+  // remove the window from our knowledge
+  windows.erase(id);
 }

@@ -2,12 +2,12 @@
 #define WINDOWMANAGER_H
 
 #include "atom.h"
+#include "basic_window.h"
 #include "keybind.h"
 #include "ptr.h"
-#include "window.h"
 #include <xcb/xcb.h>
 
-class WindowManager
+class WindowManager : BasicWindow
 {
 public:
   WindowManager();
@@ -19,25 +19,33 @@ public:
   xcb_screen_t*     get_root_screen() { return root_screen; }
   xcb_window_t      get_root_window() { return root_screen->root; }
 
-private:
+  void add_window()    override {};
+  void resize()        override {};
+  void move()          override {};
+  void get_focus()     override {};
+  void hide()          override {};
+  void close()         override {};
+  void show()          override {};
+
+  // public members which are used regulary by other classes
   xcb_connection_t* conn;
   xcb_screen_t* root_screen;
-
-  // very simple window management
   WindowStorage windows;
-  Keybindings keybindings;
   Atoms atoms;
 
-  Window* focus;
+private:
+  Keybindings keybindings;
+
 
   void initialize_keybindings();
   void initialize_mousebindings();
 
+  BasicWindow* new_xwindow();
   void spawn(const char*);
   void close_focus_window();
   void close_window(xcb_window_t);
-  void set_focus(xcb_window_t id) { set_focus(windows[id]); }
-  void set_focus(Window* win);
+  void set_focus(xcb_window_t id) { set_focus(windows[id].get()); }
+  void set_focus(BasicWindow* win);
 
   void event_loop();
   void handle_button_press_event(xcb_button_press_event_t*);

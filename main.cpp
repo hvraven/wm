@@ -1,10 +1,11 @@
+#include <unistd.h>
 #include "windowmanager.h"
 
-#include <unistd.h>
+WindowManager* wm;
 
 int main()
 {
-  WindowManager wm;
-  wm.run();
-  pause();
+  WindowManager windowmanager;
+  wm = &windowmanager;
+  windowmanager.run();
 }
