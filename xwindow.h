@@ -13,8 +13,6 @@ class XWindow : public BasicWindow
 public:
   XWindow(xcb_window_t id, BasicWindow* parent = nullptr);
 
-  xcb_window_t get_id() const { return id; }
-
   void move()        override {};
   void show()        override {};
   void hide()        override {};
