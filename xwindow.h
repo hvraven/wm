@@ -13,7 +13,7 @@ class XWindow : public BasicWindow
 public:
   XWindow(xcb_window_t id, BasicWindow* parent = nullptr);
 
-  void move()        override {};
+  void move(xcb_query_pointer_reply_t*) override;
   void show()        override {};
   void hide()        override {};
   void add_window()  override {};

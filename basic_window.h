@@ -16,7 +16,7 @@ public:
   // adds a subwindow, gets passed from top down
   virtual void add_window() = 0;
   virtual void resize() = 0;
-  virtual void move() = 0;
+  virtual void move(xcb_query_pointer_reply_t*) = 0;
   virtual void show() = 0;
   virtual void hide() = 0;
 
@@ -29,6 +29,9 @@ public:
   void reset_focus(BasicWindow*);
   // tells the window it get's the focus
   virtual void get_focus() = 0;
+
+  void set_parent(BasicWindow* p) { parent = p; }
+  BasicWindow* get_parent() { return parent; }
 
   xcb_window_t get_id() const { return id; }
 

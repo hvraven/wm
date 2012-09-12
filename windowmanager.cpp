@@ -200,13 +200,6 @@ WindowManager::handle_enter_notify_event(xcb_enter_notify_event_t* event)
   if (event->mode != XCB_NOTIFY_MODE_NORMAL)
     return;
 
-  // check if we're entering the same window
-  if (focus != nullptr && focus->get_id() == event->event)
-    {
-      dlog("moving into same window");
-      return;
-    }
-
   // we're not intrested if we're moving into the root window
   if (event->event == get_root_window())
     {
@@ -232,6 +225,9 @@ WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
 {
   XWindow* win = windows.new_xwindow(event->window);
 
+  // for now every window is a child of the root window
+  win->set_parent(this);
+
   dlog("Initialized new XWindow with id=", win->get_id());
 
   xcb_map_window(conn, win->get_id());
@@ -246,8 +242,12 @@ WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
 void
 WindowManager::handle_motion_notify_event(xcb_motion_notify_event_t*)
 {
+  // we just move if the have a focused window
   if (focus == nullptr)
-    return;
+    {
+      dlog("No focused window. Not moving");
+      return;
+    }
 
   free_ptr<xcb_query_pointer_reply_t> pointer
     (xcb_query_pointer_reply(conn, xcb_query_pointer
@@ -260,14 +260,8 @@ WindowManager::handle_motion_notify_event(xcb_motion_notify_event_t*)
       return;
     }
 
-  // move window to new mouse position
-  uint32_t values[2];
-  values[0] = pointer->root_x;
-  values[1] = pointer->root_y;
-  xcb_configure_window(conn, focus->get_id(),
-                       XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
-                       values);
-  xcb_flush(conn);
+  // the focused window should handle the move
+  focus->move(pointer.get());
 }
 
 /**

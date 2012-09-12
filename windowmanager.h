@@ -21,7 +21,7 @@ public:
 
   void add_window()    override {};
   void resize()        override {};
-  void move()          override {};
+  void move(xcb_query_pointer_reply_t*) override {};
   void get_focus()     override {};
   void hide()          override {};
   void close()         override {};

@@ -1,5 +1,6 @@
 #include "xwindow.h"
 #include "global.h"
+#include "logging.h"
 #include <xcb/xcb_icccm.h>
 
 XWindow::XWindow(xcb_window_t id, BasicWindow* parent)
@@ -17,11 +18,16 @@ XWindow::XWindow(xcb_window_t id, BasicWindow* parent)
 void
 XWindow::get_focus()
 {
+  // check if we allready had the focus
+  if (focus == this)
+    return;
+
+  dlog("Window ", id, " has received the focus");
   // tell the X server we now have the focus
   xcb_set_input_focus(wm->conn, XCB_INPUT_FOCUS_POINTER_ROOT,
                       get_id(), XCB_CURRENT_TIME);
 
-  reset_focus();
+  reset_focus(this);
 }
 
 void
@@ -62,5 +68,18 @@ XWindow::close()
   else
     xcb_kill_client(wm->conn, id);
 
+  xcb_flush(wm->conn);
+}
+
+void
+XWindow::move(xcb_query_pointer_reply_t* pointer)
+{
+  uint32_t values[2];
+  values[0] = pointer->root_x;
+  values[1] = pointer->root_y;
+  dlog("moving window ", id, " to x=", values[0], " y=", values[1], ".");
+  xcb_configure_window(wm->conn, id,
+                       XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
+                       values);
   xcb_flush(wm->conn);
 }
