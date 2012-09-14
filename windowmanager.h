@@ -24,7 +24,7 @@ public:
   void move(xcb_query_pointer_reply_t*) override {};
   void get_focus()     override {};
   void hide()          override {};
-  void close()         override {};
+  void close()         override;
   void show()          override {};
 
   // public members which are used regulary by other classes
@@ -35,7 +35,6 @@ public:
 
 private:
   Keybindings keybindings;
-
 
   void initialize_keybindings();
   void initialize_mousebindings();

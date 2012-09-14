@@ -16,6 +16,10 @@ WindowManager::initialize_keybindings()
   bindings.push_back
     (std::make_tuple(XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT, XK_Q,
                      &WindowManager::close_focus_window));
+  bindings.push_back
+    (std::make_tuple(XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT |
+                     XCB_MOD_MASK_CONTROL, XK_Q,
+                     &WindowManager::close));
 
   keysyms_ptr keysyms = get_key_symbols();
 

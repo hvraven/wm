@@ -48,7 +48,7 @@ typedef std::map<xcb_window_t, std::unique_ptr<BasicWindow>> WindowMap;
 class WindowStorage : public WindowMap
 {
 public:
-  XWindow* new_xwindow(xcb_window_t);
+  BasicWindow* new_xwindow(xcb_window_t);
 };
 
 #endif /* BASIC_WINDOW_H */

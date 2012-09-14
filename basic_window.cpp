@@ -5,7 +5,7 @@
 void
 BasicWindow::remove_focus()
 {
-  if (focus != nullptr)
+  if (focus != nullptr && focus != this)
     focus->remove_focus();
 
   focus = nullptr;
@@ -25,7 +25,7 @@ BasicWindow::reset_focus(BasicWindow* win)
     parent->reset_focus(this);
 }
 
-XWindow*
+BasicWindow*
 WindowStorage::new_xwindow(xcb_window_t id)
 {
   XWindow win(id);
