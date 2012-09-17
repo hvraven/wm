@@ -7,6 +7,13 @@
 #include "ptr.h"
 #include <xcb/xcb.h>
 
+enum WindowState
+{
+  None,
+  Move,
+  Resize
+};
+
 class WindowManager : BasicWindow
 {
 public:
@@ -20,7 +27,7 @@ public:
   xcb_window_t      get_root_window() { return root_screen->root; }
 
   void add_window()    override {};
-  void resize()        override {};
+  void resize(xcb_query_pointer_reply_t*) override {};
   void move(xcb_query_pointer_reply_t*) override {};
   void get_focus()     override {};
   void hide()          override {};
@@ -35,6 +42,7 @@ public:
 
 private:
   Keybindings keybindings;
+  WindowState window_state;
 
   void initialize_keybindings();
   void initialize_mousebindings();

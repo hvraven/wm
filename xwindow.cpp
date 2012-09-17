@@ -13,6 +13,8 @@ XWindow::XWindow(xcb_window_t id, BasicWindow* parent)
                         XCB_EVENT_MASK_PROPERTY_CHANGE |
                         XCB_EVENT_MASK_ENTER_WINDOW };
   xcb_change_window_attributes(wm->conn, id, mask, values);
+
+  get_geometry();
 }
 
 void
@@ -74,12 +76,17 @@ XWindow::close()
 void
 XWindow::move(xcb_query_pointer_reply_t* pointer)
 {
-  uint32_t values[2];
-  values[0] = pointer->root_x;
-  values[1] = pointer->root_y;
-  dlog("moving window ", id, " to x=", values[0], " y=", values[1], ".");
-  xcb_configure_window(wm->conn, id,
-                       XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
-                       values);
-  xcb_flush(wm->conn);
+  x = pointer->root_x;
+  y = pointer->root_y;
+  dlog("moving window ", id, " to x=", x, " y=", y, ".");
+  update_configuration(XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y);
+}
+
+void
+XWindow::resize(xcb_query_pointer_reply_t* pointer)
+{
+  width = abs(pointer->root_x - x);
+  height = abs(pointer->root_y - y);
+  dlog("resizing window ", id, " to width=", width, " height=", height, ".");
+  update_configuration(XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT);
 }

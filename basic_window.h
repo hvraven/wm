@@ -9,13 +9,14 @@ class BasicWindow
 {
 public:
   BasicWindow(xcb_window_t id_, BasicWindow* parent_ = nullptr)
-    : focus(nullptr), parent(parent_), id(id_) {}
+    : focus(nullptr), parent(parent_), id(id_), x(0), y(0), width(0),
+      height(0) {}
   virtual ~BasicWindow() {};
 
   // top -> down
   // adds a subwindow, gets passed from top down
   virtual void add_window() = 0;
-  virtual void resize() = 0;
+  virtual void resize(xcb_query_pointer_reply_t*) = 0;
   virtual void move(xcb_query_pointer_reply_t*) = 0;
   virtual void show() = 0;
   virtual void hide() = 0;
@@ -35,14 +36,19 @@ public:
 
   xcb_window_t get_id() const { return id; }
 
-protected:
   BasicWindow* focus;
   BasicWindow* parent;
-
   xcb_window_t id;
-};
 
-class XWindow;
+  uint16_t x;
+  uint16_t y;
+  uint16_t width;
+  uint16_t height;
+
+protected:
+  void get_geometry();
+  void update_configuration(uint16_t mask);
+};
 
 typedef std::map<xcb_window_t, std::unique_ptr<BasicWindow>> WindowMap;
 class WindowStorage : public WindowMap

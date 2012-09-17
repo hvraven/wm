@@ -14,7 +14,8 @@ WindowManager::WindowManager()
     root_screen(nullptr),
     windows(),
     atoms(),
-    keybindings()
+    keybindings(),
+    window_state(None)
 {
   int screen_num;
   conn = xcb_connect(nullptr, &screen_num);

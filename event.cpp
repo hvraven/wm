@@ -75,6 +75,28 @@ WindowManager::handle_button_press_event
   if (event->child == 0)
     return;
 
+  // we need a focus to handle this event
+  if (focus == nullptr)
+    return;
+
+  switch(event->detail)
+    {
+    case XCB_BUTTON_INDEX_1:
+      dlog("Starting window movement");
+      window_state = Move;
+      xcb_warp_pointer(conn, XCB_NONE, focus->id,
+                       0, 0, 0, 0, 1, 1);
+      break;
+    case XCB_BUTTON_INDEX_2:
+      dlog("Starting resizing");
+      window_state = Resize;
+      xcb_warp_pointer(conn, XCB_NONE, focus->id,
+                       0, 0, 0, 0, focus->width, focus->height);
+      break;
+    default:
+      return;
+    }
+
   dlog("grabing pointer in focused window");
   xcb_grab_pointer(conn, 0, get_root_window(),
                    XCB_EVENT_MASK_BUTTON_RELEASE |
@@ -84,6 +106,7 @@ WindowManager::handle_button_press_event
                    get_root_window(),
                    XCB_NONE,
                    XCB_CURRENT_TIME);
+
 
   xcb_flush(conn);
 }
@@ -96,6 +119,7 @@ WindowManager::handle_button_release_event (xcb_button_release_event_t*)
 {
   dlog("Releasing pointer.");
   xcb_ungrab_pointer(conn, XCB_CURRENT_TIME);
+  window_state = None;
   xcb_flush(conn);
 }
 
@@ -103,21 +127,52 @@ void
 WindowManager::handle_configure_request_event
     (xcb_configure_request_event_t* event)
 {
-  uint32_t values[7];
+  uint32_t values[6];
   int i = -1;
 
-  if (event->value_mask & XCB_CONFIG_WINDOW_X)
-    values[++i] = event->x;
-  if (event->value_mask & XCB_CONFIG_WINDOW_Y)
-    values[++i] = event->y;
-  if (event->value_mask & XCB_CONFIG_WINDOW_WIDTH)
-    values[++i] = event->width;
-  if (event->value_mask & XCB_CONFIG_WINDOW_HEIGHT)
-    values[++i] = event->height;
-  if (event->value_mask & XCB_CONFIG_WINDOW_SIBLING)
-    values[++i] = event->sibling;
-  if (event->value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
-    values[++i] = event->stack_mode;
+  auto win = windows[event->window].get();
+  if (win != nullptr)
+    {
+      if (event->value_mask & XCB_CONFIG_WINDOW_X)
+        {
+          values[++i] = event->x;
+          win->x = event->x;
+        }
+      if (event->value_mask & XCB_CONFIG_WINDOW_Y)
+        {
+          values[++i] = event->x;
+          win->y = event->y;
+        }
+      if (event->value_mask & XCB_CONFIG_WINDOW_WIDTH)
+        {
+          values[++i] = event->width;
+          win->width = event->width;
+        }
+      if (event->value_mask & XCB_CONFIG_WINDOW_HEIGHT)
+        {
+          values[++i] = event->height;
+          win->height = event->height;
+        }
+      if (event->value_mask & XCB_CONFIG_WINDOW_SIBLING)
+        values[++i] = event->sibling;
+      if (event->value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
+        values[++i] = event->stack_mode;
+    }
+  else
+    {
+      if (event->value_mask & XCB_CONFIG_WINDOW_X)
+        values[++i] = event->x;
+      if (event->value_mask & XCB_CONFIG_WINDOW_Y)
+        values[++i] = event->y;
+      if (event->value_mask & XCB_CONFIG_WINDOW_WIDTH)
+        values[++i] = event->width;
+      if (event->value_mask & XCB_CONFIG_WINDOW_HEIGHT)
+        values[++i] = event->height;
+      if (event->value_mask & XCB_CONFIG_WINDOW_SIBLING)
+        values[++i] = event->sibling;
+      if (event->value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
+        values[++i] = event->stack_mode;
+    }
 
   if (i >= 0)
     {
@@ -142,7 +197,11 @@ WindowManager::handle_enter_notify_event(xcb_enter_notify_event_t* event)
     }
 
   // tells the matching window it will get the focus
-  windows[event->event]->get_focus();
+  auto& win = windows[event->event];
+  if (win == nullptr)
+    elog("Moved into unknown window");
+  else
+   win->get_focus();
 }
 
 void
@@ -185,7 +244,7 @@ WindowManager::handle_motion_notify_event(xcb_motion_notify_event_t*)
 
   free_ptr<xcb_query_pointer_reply_t> pointer
     (xcb_query_pointer_reply(conn, xcb_query_pointer
-                                      (conn, get_root_window()), 0),
+                             (conn, get_root_window()), 0),
      &std::free);
 
   if (pointer == nullptr)
@@ -194,7 +253,17 @@ WindowManager::handle_motion_notify_event(xcb_motion_notify_event_t*)
       return;
     }
 
-  // the focused window should handle the move
-  focus->move(pointer.get());
+  switch (window_state)
+    {
+    case Move:
+      focus->move(pointer.get());
+      break;
+    case Resize:
+      focus->resize(pointer.get());
+      break;
+    case None:
+      elog("Got a motion notify with window_state none");
+      return;
+    }
 }
 
