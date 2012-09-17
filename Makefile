@@ -25,10 +25,10 @@ ${TARGET}: ${OBJS}
 .cpp.o:
 	${CXX} -c ${CXXFLAGS} ${CPPFLAGS} $<
 
-init: all
+init:
 	xinit ./wm -- :5
 
-vinit: all
+vinit:
 	xinit /usr/bin/valgrind --leak-check=full ./wm -- :5
 
 .PHONY: clean distclean init vinit
