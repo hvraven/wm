@@ -78,7 +78,7 @@ WindowManager::close_focus_window()
       dlog("Tried to close focused window, but no focus set.");
       return;
     }
-  close_window(focus->get_id());
+  close_window(focus->id);
 
   // we just killed our focused window
   focus = nullptr;

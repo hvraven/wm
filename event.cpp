@@ -221,9 +221,9 @@ WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
   // for now every window is a child of the root window
   win->set_parent(this);
 
-  dlog("Initialized new XWindow with id=", win->get_id());
+  dlog("Initialized new XWindow with id=", win->id);
 
-  xcb_map_window(conn, win->get_id());
+  xcb_map_window(conn, win->id);
   win->get_focus();
   xcb_flush(conn);
 }

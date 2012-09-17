@@ -34,8 +34,6 @@ public:
   void set_parent(BasicWindow* p) { parent = p; }
   BasicWindow* get_parent() { return parent; }
 
-  xcb_window_t get_id() const { return id; }
-
   BasicWindow* focus;
   BasicWindow* parent;
   xcb_window_t id;

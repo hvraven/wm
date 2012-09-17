@@ -27,13 +27,14 @@ XWindow::get_focus()
   dlog("Window ", id, " has received the focus");
   // tell the X server we now have the focus
   xcb_set_input_focus(wm->conn, XCB_INPUT_FOCUS_POINTER_ROOT,
-                      get_id(), XCB_CURRENT_TIME);
+                      id, XCB_CURRENT_TIME);
 
   // Set border color to focused color
   uint32_t values[1] = { config->border_color_focused };
   xcb_change_window_attributes(wm->conn, id, XCB_CW_BORDER_PIXEL, values);
 
   reset_focus(this);
+  xcb_flush(wm->conn);
 }
 
 void
