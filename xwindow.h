@@ -20,6 +20,7 @@ public:
   void add_window()  override {};
   void close()       override;
   void get_focus()   override;
+  void remove_focus() override;
 };
 
 #endif /* XWINDOW_H */
