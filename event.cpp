@@ -79,23 +79,9 @@ WindowManager::handle_button_press_event
   if (focus == nullptr)
     return;
 
-  switch(event->detail)
-    {
-    case XCB_BUTTON_INDEX_1:
-      dlog("Starting window movement");
-      window_state = Move;
-      xcb_warp_pointer(conn, XCB_NONE, focus->id,
-                       0, 0, 0, 0, 1, 1);
-      break;
-    case XCB_BUTTON_INDEX_2:
-      dlog("Starting resizing");
-      window_state = Resize;
-      xcb_warp_pointer(conn, XCB_NONE, focus->id,
-                       0, 0, 0, 0, focus->width, focus->height);
-      break;
-    default:
-      return;
-    }
+  auto& fun = mousebindings[std::make_pair(XCB_MOD_MASK_4, event->detail)];
+  if (fun != nullptr)
+    fun(*this);
 
   dlog("grabing pointer in focused window");
   xcb_grab_pointer(conn, 0, get_root_window(),
@@ -208,7 +194,7 @@ void
 WindowManager::handle_key_press_event(xcb_key_press_event_t* event)
 {
   KeyBind key(event->state, event->detail);
-  KeyBindFunc fun = keybindings[key];
+  BindFunc fun = keybindings[key];
   if (fun)
     fun(*this);
 }
@@ -219,7 +205,7 @@ WindowManager::handle_map_request_event(xcb_map_request_event_t* event)
   BasicWindow* win = windows.new_xwindow(event->window);
 
   // for now every window is a child of the root window
-  win->set_parent(this);
+  win->parent = this;
 
   dlog("Initialized new XWindow with id=", win->id);
 

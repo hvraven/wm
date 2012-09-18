@@ -3,7 +3,7 @@
 
 #include "atom.h"
 #include "basic_window.h"
-#include "keybind.h"
+#include "bindings.h"
 #include "ptr.h"
 #include <xcb/xcb.h>
 
@@ -26,13 +26,19 @@ public:
   xcb_screen_t*     get_root_screen() { return root_screen; }
   xcb_window_t      get_root_window() { return root_screen->root; }
 
-  void add_window()    override {};
-  void resize(xcb_query_pointer_reply_t*) override {};
-  void move(xcb_query_pointer_reply_t*) override {};
+  void add_window(BasicWindow*) override {};
+  void remove_window(BasicWindow*) override {};
+  void enable_resize();
+  void resize(xcb_query_pointer_reply_t*) {};
+  void enable_move();
+  void move(xcb_query_pointer_reply_t*) {};
   void get_focus()     override {};
   void hide()          override {};
   void close()         override;
   void show()          override {};
+
+  void spawn(const char*);
+  void close_focus_window();
 
   // public members which are used regulary by other classes
   xcb_connection_t* conn;
@@ -40,16 +46,15 @@ public:
   WindowStorage windows;
   Atoms atoms;
 
+  KeyBindings   keybindings;
+  MouseBindings mousebindings;
+
 private:
-  Keybindings keybindings;
   WindowState window_state;
 
   void initialize_keybindings();
   void initialize_mousebindings();
 
-  BasicWindow* new_xwindow();
-  void spawn(const char*);
-  void close_focus_window();
   void close_window(xcb_window_t);
   void set_focus(xcb_window_t id) { set_focus(windows[id].get()); }
   void set_focus(BasicWindow* win);
@@ -64,10 +69,6 @@ private:
   void handle_map_request_event(xcb_map_request_event_t*);
   void handle_motion_notify_event(xcb_motion_notify_event_t*);
 
-  keysyms_ptr get_key_symbols();
-  keycode_ptr get_key_code(xcb_key_symbols_t *, xcb_keysym_t);
-  keycode_ptr get_key_code(const keysyms_ptr& syms, xcb_keysym_t sym)
-    { return get_key_code(syms.get(), sym); }
 };
 
 #endif /* WINDOWMANAGER_H */

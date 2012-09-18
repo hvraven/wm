@@ -2,14 +2,9 @@
 #include "conf.h"
 #include "windowmanager.h"
 
-WindowManager* wm;
-Configuration* config;
-
 int main()
 {
-  WindowManager windowmanager;
-  wm = &windowmanager;
   Configuration configuration;
-  config = &configuration;
+  WindowManager windowmanager;
   windowmanager.run();
 }

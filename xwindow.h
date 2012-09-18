@@ -17,10 +17,12 @@ public:
   void resize(xcb_query_pointer_reply_t*) override;
   void show()        override {};
   void hide()        override {};
-  void add_window()  override {};
   void close()       override;
   void get_focus()   override;
   void remove_focus() override;
+
+  void add_window   (BasicWindow*) override {};
+  void remove_window(BasicWindow*) override {};
 };
 
 #endif /* XWINDOW_H */

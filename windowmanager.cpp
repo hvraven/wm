@@ -1,12 +1,14 @@
 #include "windowmanager.h"
 
-#include "logging.h"
+#include "global.h"
 #include "ptr.h"
 #include "xwindow.h"
 #include <stdexcept>
 #include <unistd.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_icccm.h>
+
+WindowManager* wm;
 
 WindowManager::WindowManager()
   : BasicWindow(0),
@@ -15,6 +17,7 @@ WindowManager::WindowManager()
     windows(),
     atoms(),
     keybindings(),
+    mousebindings(),
     window_state(None)
 {
   int screen_num;
@@ -38,6 +41,8 @@ WindowManager::WindowManager()
   if (error != nullptr)
     throw std::runtime_error("Another wm seems to be running.");
 
+  wm = this;
+  config->complete_initialization();
   initialize_keybindings();
   initialize_mousebindings();
 
@@ -105,3 +110,20 @@ WindowManager::close()
   exit(0);
 }
 
+void
+WindowManager::enable_move()
+{
+  dlog("Starting window movement");
+  window_state = Move;
+  xcb_warp_pointer(conn, XCB_NONE, focus->id,
+                   0, 0, 0, 0, 1, 1);
+}
+
+void
+WindowManager::enable_resize()
+{
+  dlog("Starting resizing");
+  window_state = Resize;
+  xcb_warp_pointer(conn, XCB_NONE, focus->id,
+                   0, 0, 0, 0, focus->width, focus->height);
+}

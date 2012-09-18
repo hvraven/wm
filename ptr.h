@@ -15,4 +15,18 @@ make_unique(Args&&... args)
   return ptr;
 }
 
+template<class T, class... Args>
+free_ptr<T>
+make_free(Args&&... args)
+{
+  return free_ptr<T>(new T(std::forward<Args>(args)...), &std::free);
+}
+
+template<class T>
+free_ptr<T>
+make_free_ptr(T* arg)
+{
+  return free_ptr<T>(arg, &std::free);
+}
+
 #endif /* PTR_H */

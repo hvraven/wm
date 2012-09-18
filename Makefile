@@ -1,6 +1,6 @@
 TARGET = wm
 
-SCRS = main.cpp windowmanager.cpp atom.cpp basic_window.cpp conf.cpp event.cpp init.cpp keybind.cpp xwindow.cpp
+SCRS = main.cpp windowmanager.cpp atom.cpp basic_window.cpp conf.cpp event.cpp init.cpp xwindow.cpp
 OBJS = ${SCRS:.cpp=.o}
 
 PREFIX ?= /usr

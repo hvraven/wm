@@ -1,41 +1,31 @@
 #include "windowmanager.h"
-#include "keybind.h"
+#include "bindings.h"
+#include "global.h"
 
-#include <vector>
+typedef std::unique_ptr<xcb_key_symbols_t,
+                        std::function<void(xcb_key_symbols_t*)>>
+    keysyms_ptr;
 
 void
 WindowManager::initialize_keybindings()
 {
-  // temporary initialisation, should come from config
-  std::vector<KeyBindConf> bindings;
-  bindings.push_back
-    (std::make_tuple(XCB_MOD_MASK_4, XK_Return,
-                     std::bind(&WindowManager::spawn,
-                               std::placeholders::_1,
-                               "/usr/bin/xterm")));
-  bindings.push_back
-    (std::make_tuple(XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT, XK_Q,
-                     &WindowManager::close_focus_window));
-  bindings.push_back
-    (std::make_tuple(XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT |
-                     XCB_MOD_MASK_CONTROL, XK_Q,
-                     &WindowManager::close));
+  auto keysym_del = [&](xcb_key_symbols_t* ptr){xcb_key_symbols_free(ptr); };
+  auto keysyms = keysyms_ptr(xcb_key_symbols_alloc(conn), keysym_del);
 
-  keysyms_ptr keysyms = get_key_symbols();
-
-  for (const auto& binding : bindings)
+  for (const auto& config : config->keybindconfigs)
     {
-      keycode_ptr kcode = get_key_code(keysyms, std::get<1>(binding));
+      auto kcode = make_free_ptr<xcb_keycode_t>
+        (xcb_key_symbols_get_keycode(keysyms.get(), std::get<1>(config)));
 
       // The keycode can contain multiple values for a single keysym.
       // We have to register all of them.
       xcb_keycode_t* keycode = kcode.get();
       while (*keycode != XCB_NO_SYMBOL)
         {
-          xcb_grab_key(conn, 0, get_root_window(), std::get<0>(binding), 
+          xcb_grab_key(conn, 0, get_root_window(), std::get<0>(config),
                        *keycode, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC);
-          KeyBind key(std::get<0>(binding), *keycode);
-          keybindings[key] = std::get<2>(binding);
+          KeyBind key(std::get<0>(config), *keycode);
+          keybindings[key] = std::get<2>(config);
           ++keycode;
         }
     }
@@ -47,17 +37,20 @@ void
 WindowManager::initialize_mousebindings()
 {
   // grab mouse buttons with modifier
-  for (auto button : { XCB_BUTTON_INDEX_1,    // left
-                       XCB_BUTTON_INDEX_2,    // right
-                       XCB_BUTTON_INDEX_3 } ) // middle
-    xcb_grab_button(conn,
-                    0,     // shall the event get to the lower windows
-                    get_root_window(),    // grab in this area
-                    XCB_EVENT_MASK_BUTTON_PRESS,  // events to grab
-                    XCB_GRAB_MODE_ASYNC,  // pointer mode
-                    XCB_GRAB_MODE_ASYNC,  // keyboard mode
-                    get_root_window(),    // border for mouse
-                    XCB_NONE,  // curser type (NONE = unchanged)
-                    button,    // button to grab
-                    XCB_MOD_MASK_4); // key board modifier to grab
+  for (const auto& config : config->mousebindconfigs)
+    {
+      xcb_grab_button(conn,
+                      0,     // shall the event get to the lower windows
+                      get_root_window(),    // grab in this area
+                      XCB_EVENT_MASK_BUTTON_PRESS,  // events to grab
+                      XCB_GRAB_MODE_ASYNC,  // pointer mode
+                      XCB_GRAB_MODE_ASYNC,  // keyboard mode
+                      get_root_window(),    // border for mouse
+                      XCB_NONE,  // curser type (NONE = unchanged)
+                      std::get<1>(config),  // button to grab
+                      std::get<0>(config)); // key board modifier to grab
+
+      MouseBind mouse(std::get<0>(config), std::get<1>(config));
+      mousebindings[mouse] = std::get<2>(config);
+    }
 }

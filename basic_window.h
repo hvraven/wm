@@ -13,9 +13,6 @@ public:
       height(0) {}
   virtual ~BasicWindow() {};
 
-  // top -> down
-  // adds a subwindow, gets passed from top down
-  virtual void add_window() = 0;
   virtual void resize(xcb_query_pointer_reply_t*) = 0;
   virtual void move(xcb_query_pointer_reply_t*) = 0;
   virtual void show() = 0;
@@ -31,8 +28,8 @@ public:
   // tells the window it get's the focus
   virtual void get_focus() = 0;
 
-  void set_parent(BasicWindow* p) { parent = p; }
-  BasicWindow* get_parent() { return parent; }
+  virtual void add_window(BasicWindow*) = 0;
+  virtual void remove_window(BasicWindow*) = 0;
 
   BasicWindow* focus;
   BasicWindow* parent;
@@ -56,3 +53,4 @@ public:
 };
 
 #endif /* BASIC_WINDOW_H */
+
